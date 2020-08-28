@@ -5,6 +5,7 @@
 
 int wyog_cmd_init(int argc, char **argv)
 {
+	int retval;
 	const char *dest;
 	struct wyog_repo repo;
 
@@ -17,5 +18,7 @@ int wyog_cmd_init(int argc, char **argv)
 		dest = ".";
 	}
 
-	return wyog_repo_new(&repo, dest);
+	retval = wyog_repo_new(&repo, dest);
+	wyog_repo_deinit(&repo);
+	return retval;
 }

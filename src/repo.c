@@ -109,7 +109,7 @@ int wyog_repo_new(struct wyog_repo *repo, const char *path)
 		/* make sure the directory is empty */
 		i = 0;
 		while (readdir(dir) != NULL) {
-			if (++i >= 2)
+			if (i++ >= 2)
 				break;
 		}
 		if (i > 2) {
@@ -119,6 +119,7 @@ int wyog_repo_new(struct wyog_repo *repo, const char *path)
 		}
 	}
 	closedir(dir);
+	dir = NULL;
 
 	X(0 == mkdir(repo->git_dir, 0777), "mkdir");
 	X((dir = opendir(repo->git_dir)), "opendir");
