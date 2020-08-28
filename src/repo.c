@@ -1,9 +1,11 @@
+#include <assert.h>
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/param.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -150,4 +152,62 @@ end:
 		fclose(f);
 	return retval;
 #undef X
+}
+
+char path_buf[MAXPATHLEN];
+char tmp_path_buf[MAXPATHLEN];
+char tmp_path_buf2[MAXPATHLEN];
+
+int wyog_repo_find(void) {
+	int fd;
+	DIR *dir;
+	struct stat st;
+	const char *path;
+
+	path = ".";
+	do {
+		dir = opendir(path);
+		if (!dir) {
+			fprintf(stderr, "'%s' is not a directory\n", path);
+			goto error;
+		}
+
+		if (-1 != (fd = openat(dirfd(dir), ".git", O_DIRECTORY)))
+			break;
+
+		closedir(dir);
+		dir = NULL;
+		snprintf(path_buf, MAXPATHLEN, "%s/..", path);
+		realpath(path_buf, tmp_path_buf);
+
+		/* hit root (realpath("/..") == "/") */
+		if (!strcmp(path, tmp_path_buf)) {
+			fprintf(stderr, "Not in a git repository\n");
+			goto error;
+		}
+
+		strcpy(tmp_path_buf2, tmp_path_buf);
+		path = tmp_path_buf2;
+	} while (1);
+
+	/* make sure the found .git is a directory */
+	assert(!fstat(fd, &st));
+	if (!S_ISDIR(st.st_mode)) {
+		if (fcntl(fd, F_GETPATH, path_buf))
+			path_buf[0] = 0;
+		fprintf(stderr, "Found '%s' but it's not a directory\n",
+				path_buf);
+		goto error;
+	}
+
+	goto end;
+error:
+	if (fd != -1)
+		close(fd);
+	fd = -1;
+
+end:
+	if (dir)
+		closedir(dir);
+	return fd;
 }

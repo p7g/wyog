@@ -11,6 +11,7 @@ struct wyog_repo {
 
 int wyog_repo_new(struct wyog_repo *repo, const char *path);
 int wyog_repo_open(struct wyog_repo *repo, const char *path);
+int wyog_repo_find(void);
 void wyog_repo_deinit(struct wyog_repo *repo);
 
 #endif
