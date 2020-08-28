@@ -34,10 +34,9 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (!fn) {
-		fprintf(stderr, "'%s' is not recognized as a wyog command\n", cmd);
-		return 2;
-	}
+	if (fn)
+		return fn(argc - 2, argv + 2);
 
-	return 0;
+	fprintf(stderr, "'%s' is not recognized as a wyog command\n", cmd);
+	return 2;
 }

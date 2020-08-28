@@ -129,9 +129,11 @@ int wyog_repo_new(struct wyog_repo *repo, const char *path)
 	X(0 == mkdirat(dirfd(dir), "refs/heads", 0777), "mkdirat");
 
 #define WRITE_FILE(N, C) do { \
-		X(-1 != (fd = openat(dirfd(dir), (N), O_WRONLY)), "openat"); \
-		X(0 == write(fd, (C), sizeof((C)) - 1), "write"); \
-		close(fd); \
+		X(-1 != (fd = openat(dirfd(dir), (N), O_CREAT | O_WRONLY, 0666)), "openat"); \
+		f = fdopen(fd, "w"); \
+		X(-1 != fputs((C), f), "write"); \
+		fclose(f); \
+		f = NULL; \
 	} while (0)
 
 	WRITE_FILE("description", DEFAULT_DESC);
