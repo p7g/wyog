@@ -1,3 +1,10 @@
+/**
+ * An implementation of SHA1 according to RFC 3174[1]. Remember to always roll
+ * your own crypto!
+ *
+ * [1]: http://www.faqs.org/rfcs/rfc3174.html
+ */
+
 #include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -17,11 +24,6 @@ static void write_word(char *buf, uint32_t word)
 	/* a hex digit can represent 4 bits */
 	for (i = 0; i < 8; i += 1)
 		buf[7 - i] = HEX_DIGITS[(word >> (i * 4)) & 0xF];
-}
-
-static uint32_t circular_left_shift(uint32_t word, int n)
-{
-	return (word << n) | (word >> (32 - n));
 }
 
 uint32_t *pad_message(const char *message, uint64_t bit_length,
@@ -53,6 +55,11 @@ uint32_t *pad_message(const char *message, uint64_t bit_length,
 	data[data_len - 1] = bit_length & 0xFFFFFFFF;
 
 	return data;
+}
+
+static uint32_t S(uint32_t word, int n)
+{
+	return (word << n) | (word >> (32 - n));
 }
 
 static uint32_t f(int t, uint32_t B, uint32_t C, uint32_t D)
@@ -105,16 +112,13 @@ static void digest(uint32_t *_M, size_t message_len, uint32_t out[5])
 		for (j = 0; j < 16; j += 1)
 			W[j] = M(i)[j];
 		for (t = 16; t <= 79; t += 1)
-			W[t] = circular_left_shift(
-					W[t-3] ^ W[t-8] ^ W[t-14] ^ W[t-16],
-					1);
+			W[t] = S(W[t-3] ^ W[t-8] ^ W[t-14] ^ W[t-16], 1);
 		A = H0; B = H1; C = H2; D = H3; E = H4;
 		for (t = 0; t <= 79; t += 1) {
-			TEMP = circular_left_shift(A, 5) + f(t, B, C, D) + E +
-				W[t] + K(t);
+			TEMP = S(A, 5) + f(t, B, C, D) + E + W[t] + K(t);
 			E = D;
 			D = C;
-			C = circular_left_shift(B, 30);
+			C = S(B, 30);
 			B = A;
 			A = TEMP;
 		}
